@@ -1,0 +1,12 @@
+{% extends 'management/base.html' %}
+{% block title %}Home - Company Management{% endblock %}
+{% block content %}
+<div class="text-center">
+    <h1 class="mb-4">Welcome to Company Management</h1>
+    <div class="d-grid gap-3 col-6 mx-auto">
+        <a href="{% url 'company_list' %}" class="btn btn-primary btn-lg">Manage Companies</a>
+        <a href="{% url 'unit_list' %}" class="btn btn-secondary btn-lg">Manage Units</a>
+        <a href="{% url 'employee_list' %}" class="btn btn-success btn-lg">Manage Employees</a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,15 @@
+{% extends 'management/base.html' %}
+{% block title %}Company Form{% endblock %}
+{% block content %}
+<div class="container">
+    <h2>{% if form.instance.pk %}Edit Company{% else %}New Company{% endif %}</h2>
+    <form method="post" class="mt-4">
+        {% csrf_token %}
+        <div class="mb-3">
+            {{ form.as_p }}
+        </div>
+        <button type="submit" class="btn btn-success">Save</button>
+        <a href="{% url 'company_list' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}

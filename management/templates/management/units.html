@@ -1,0 +1,28 @@
+{% extends 'management/base.html' %}
+{% block title %}Units{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center">
+    <h2>Units</h2>
+    <a href="{% url 'unit_create' %}" class="btn btn-primary">Add New Unit</a>
+</div>
+<table class="table table-striped mt-3">
+    <thead class="table-dark">
+        <tr>
+            <th>Name</th>
+            <th>Company</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for unit in units %}
+            <tr>
+                <td>{{ unit.name }}</td>
+                <td>{{ unit.company.name }}</td>
+                <td>
+                    <a href="{% url 'unit_edit' unit.pk %}" class="btn btn-sm btn-warning">Edit</a>
+                </td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
