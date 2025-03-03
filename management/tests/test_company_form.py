@@ -4,8 +4,15 @@ Company Form Test Module.
 This module contains tests for the company form functionality.
 It follows PEP 8 and PEP 287 standards.
 
-Classes:
-    CompanyFormViewTests: Test cases for company form views.
+Test Categories:
+    - Basic form functionality
+    - Special characters (Chinese, Japanese, Arabic)
+    - Edge cases (very long strings, infinity values)
+    - Form validation
+    - CRUD operations
+    - Numeric edge cases
+    - RTL text support
+    - Mixed script handling
 """
 
 from django.test import TestCase
@@ -120,3 +127,65 @@ class CompanyFormViewTests(TestCase):
         self.assertEqual(response.status_code, 302)  # Should redirect on success
         self.company.refresh_from_db()
         self.assertEqual(self.company.name, 'Updated Company')
+
+    def test_special_case_extremely_long_string(self):
+        """Test handling of extremely long company names."""
+        very_long_name = 'A' * 1000  # Test with 1000 characters
+        response = self.client.post(self.url_create, {
+            'name': very_long_name,
+            'address': '123 Test St'
+        })
+        self.assertEqual(response.status_code, 200)  # Should stay on form
+        self.assertContains(response, 'Ensure this value has at most')
+
+    def test_special_case_arabic_text(self):
+        """Test handling of Arabic company names and addresses."""
+        arabic_name = 'شركة الاختبار'  # Test Company in Arabic
+        arabic_address = 'شارع الاختبار ١٢٣'  # Test Street 123 in Arabic
+        response = self.client.post(self.url_create, {
+            'name': arabic_name,
+            'address': arabic_address
+        })
+        self.assertEqual(response.status_code, 302)  # Should redirect on success
+        self.assertTrue(
+            Company.objects.filter(
+                name=arabic_name,
+                address=arabic_address
+            ).exists()
+        )
+
+    def test_special_case_infinity_values(self):
+        """Test handling of infinity symbols in company names."""
+        infinity_name = '∞ Company'
+        response = self.client.post(self.url_create, {
+            'name': infinity_name,
+            'address': '123 ∞ Street'
+        })
+        self.assertEqual(response.status_code, 302)  # Should redirect on success
+        self.assertTrue(Company.objects.filter(name=infinity_name).exists())
+
+    def test_special_case_negative_infinity(self):
+        """Test handling of negative infinity symbols in company names."""
+        neg_infinity_name = '-∞ Corporation'
+        response = self.client.post(self.url_create, {
+            'name': neg_infinity_name,
+            'address': '123 -∞ Avenue'
+        })
+        self.assertEqual(response.status_code, 302)  # Should redirect on success
+        self.assertTrue(Company.objects.filter(name=neg_infinity_name).exists())
+
+    def test_mixed_scripts_and_numbers(self):
+        """Test handling of mixed scripts with numbers."""
+        mixed_name = 'Company∞ - شركة - 公司'
+        mixed_address = '123 Test St, شارع ١٢٣, 测试街123'
+        response = self.client.post(self.url_create, {
+            'name': mixed_name,
+            'address': mixed_address
+        })
+        self.assertEqual(response.status_code, 302)  # Should redirect on success
+        self.assertTrue(
+            Company.objects.filter(
+                name=mixed_name,
+                address=mixed_address
+            ).exists()
+        )

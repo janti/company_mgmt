@@ -4,8 +4,13 @@ Employee Form Test Module.
 This module contains tests for the employee form functionality.
 It follows PEP 8 and PEP 287 standards.
 
-Classes:
-    EmployeeFormViewTests: Test cases for employee form views.
+Test Categories:
+    - Basic form functionality
+    - Special characters (Chinese, Japanese, Arabic)
+    - Edge cases (very long strings, infinity values)
+    - Form validation
+    - CRUD operations
+    - Numeric edge cases
 """
 
 from django.test import TestCase
@@ -160,5 +165,67 @@ class EmployeeFormViewTests(TestCase):
         self.assertTrue(
             Employee.objects.filter(
                 first_name=japanese_name
+            ).exists()
+        )
+
+    def test_special_case_extremely_long_names(self):
+        """Test handling of extremely long names (edge case)."""
+        very_long_name = 'A' * 1000  # Test with 1000 characters
+        response = self.client.post(self.url_create, {
+            'first_name': very_long_name,
+            'last_name': 'Test',
+            'email': 'long.name@example.com',
+            'unit': self.unit.pk
+        })
+        self.assertEqual(response.status_code, 200)  # Should stay on form
+        self.assertContains(response, 'Ensure this value has at most')
+
+    def test_special_case_arabic_names(self):
+        """Test handling of Arabic names and characters."""
+        arabic_first_name = 'محمد'  # Mohammed
+        arabic_last_name = 'العربي'  # Al-Arabi
+        response = self.client.post(self.url_create, {
+            'first_name': arabic_first_name,
+            'last_name': arabic_last_name,
+            'email': 'arabic.test@example.com',
+            'unit': self.unit.pk
+        })
+        self.assertEqual(response.status_code, 302)  # Should redirect on success
+        self.assertTrue(
+            Employee.objects.filter(
+                first_name=arabic_first_name,
+                last_name=arabic_last_name
+            ).exists()
+        )
+
+    def test_special_case_infinity_values(self):
+        """Test handling of infinity symbols in names."""
+        infinity_name = '∞ Employee'
+        response = self.client.post(self.url_create, {
+            'first_name': infinity_name,
+            'last_name': '-∞ Test',
+            'email': 'infinity.test@example.com',
+            'unit': self.unit.pk
+        })
+        self.assertEqual(response.status_code, 302)  # Should redirect on success
+        self.assertTrue(
+            Employee.objects.filter(
+                first_name=infinity_name
+            ).exists()
+        )
+
+    def test_mixed_scripts_and_numbers(self):
+        """Test handling of mixed scripts with numbers."""
+        mixed_name = 'Employee∞ - موظف - 職員'
+        response = self.client.post(self.url_create, {
+            'first_name': mixed_name,
+            'last_name': '123测试',
+            'email': 'mixed.test@example.com',
+            'unit': self.unit.pk
+        })
+        self.assertEqual(response.status_code, 302)  # Should redirect on success
+        self.assertTrue(
+            Employee.objects.filter(
+                first_name=mixed_name
             ).exists()
         )

@@ -6,6 +6,13 @@ It follows PEP 8 and PEP 287 standards.
 
 Classes:
     UnitFormViewTests: Test cases for unit form views.
+
+Test Cases:
+    - Basic form functionality
+    - Special characters (Chinese, Japanese, Arabic)
+    - Edge cases (very long strings, infinity values)
+    - Form validation
+    - CRUD operations
 """
 
 from django.test import TestCase, Client
@@ -25,6 +32,13 @@ class UnitFormViewTests(TestCase):
         unit: A test unit instance.
         url_create: URL for unit creation.
         url_edit: URL for unit editing.
+
+    Test Categories:
+        - Basic form operations
+        - Unicode character support
+        - Edge cases
+        - Form validation
+        - Database integrity
     """
     @classmethod
     def setUpTestData(cls):
@@ -136,3 +150,53 @@ class UnitFormViewTests(TestCase):
         self.assertEqual(response.status_code, 302)  # Should redirect on success
         self.unit.refresh_from_db()
         self.assertEqual(self.unit.name, 'Updated HR')
+
+    def test_special_case_very_long_string(self):
+        """Test the special case where unit names are extremely long."""
+        very_long_name = 'A' * 1000  # Try with 1000 characters
+        response = self.client.post(self.url_create, {
+            'name': very_long_name,
+            'company': self.company.pk
+        })
+        self.assertEqual(response.status_code, 200)  # Should return to form
+        self.assertContains(response, 'Ensure this value has at most')
+
+    def test_special_case_infinity(self):
+        """Test the special case where unit names contain infinity symbols."""
+        infinity_name = '∞ Department'  # Unicode infinity symbol
+        response = self.client.post(self.url_create, {
+            'name': infinity_name,
+            'company': self.company.pk
+        })
+        self.assertEqual(response.status_code, 302)  # Should redirect on success
+        self.assertTrue(Unit.objects.filter(name=infinity_name).exists())
+
+    def test_special_case_negative_infinity(self):
+        """Test the special case where unit names contain negative infinity symbols."""
+        neg_infinity_name = '-∞ Division'  # Negative infinity
+        response = self.client.post(self.url_create, {
+            'name': neg_infinity_name,
+            'company': self.company.pk
+        })
+        self.assertEqual(response.status_code, 302)  # Should redirect on success
+        self.assertTrue(Unit.objects.filter(name=neg_infinity_name).exists())
+
+    def test_special_case_arabic_characters(self):
+        """Test the special case where unit names contain Arabic characters."""
+        arabic_name = 'قسم الموارد البشرية'  # Human Resources Department in Arabic
+        response = self.client.post(self.url_create, {
+            'name': arabic_name,
+            'company': self.company.pk
+        })
+        self.assertEqual(response.status_code, 302)  # Should redirect on success
+        self.assertTrue(Unit.objects.filter(name=arabic_name).exists())
+
+    def test_special_case_mixed_scripts(self):
+        """Test the special case where unit names contain mixed scripts."""
+        mixed_name = 'HR部門 - قسم 人力资源'  # HR Department in multiple scripts
+        response = self.client.post(self.url_create, {
+            'name': mixed_name,
+            'company': self.company.pk
+        })
+        self.assertEqual(response.status_code, 302)  # Should redirect on success
+        self.assertTrue(Unit.objects.filter(name=mixed_name).exists())
